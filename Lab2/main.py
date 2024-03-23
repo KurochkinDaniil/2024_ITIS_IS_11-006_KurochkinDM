@@ -11,7 +11,7 @@ morph = pymorphy3.MorphAnalyzer()
 russian_stopwords = set(stopwords.words('russian'))
 
 
-def tokenize_and_lemmatize_document(file_path: Path):
+def tokenize_and_lemmatize_document(file_path: Path) -> [str]:
     with open(file_path, 'r', encoding='utf-8') as file:
         text = file.read()
 
@@ -21,9 +21,9 @@ def tokenize_and_lemmatize_document(file_path: Path):
     return lemmas_without_stopwords
 
 
-def process_documents(data_directory: Path, processed_directory: Path):
+def process_documents(data_directory: Path, processed_directory: Path) -> None:
     if not processed_directory.exists():
-        processed_directory.mkdir(parents=True)  # Создание директории, если она не существует
+        processed_directory.mkdir(parents=True)
 
     for filename in os.listdir(data_directory):
         if filename.endswith('_page.txt'):
