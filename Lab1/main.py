@@ -2,6 +2,7 @@ import sys
 import requests
 import re
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
 
 def get_domain_from_url(url: str) -> str:
@@ -30,16 +31,22 @@ def download_page(url: str) -> (str | None, Exception | None):
 
 def extract_links_and_text(html: str, domain: str) -> ([str], str):
     soup = BeautifulSoup(html, 'html.parser')
+
     links = []
     for link in soup.find_all('a'):
         href = link.get('href')
         if href:
-            if not href.startswith('http'):
-                href = domain + '/' + href.lstrip('/')
+            href = urljoin(domain, href)
             links.append(href)
-    for script in soup(["script", "style"]):
-        script.extract()
-    text = clean_space("\n".join(map(lambda p: p.get_text(), soup.find_all('p'))))
+
+    for script_or_style in soup(["script", "style", "head", "title", "meta", "[document]"]):
+        script_or_style.decompose()
+
+    for block in soup.find_all(['p', 'div', 'br', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6']):
+        block.replace_with('\n' + block.text + '\n')
+
+    text = clean_space(soup.get_text())
+
     return links, text
 
 
@@ -77,7 +84,7 @@ if __name__ == "__main__":
             i += 1
             continue
 
-        filename = f"data/{downloaded_pages + 1}_page.txt"
+        filename = f"data/{downloaded_pages + 1}!page.txt"
         with open(filename, 'w', encoding="utf-8") as file:
             file.write(text_)
 
