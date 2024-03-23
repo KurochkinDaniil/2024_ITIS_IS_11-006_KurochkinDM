@@ -84,7 +84,7 @@ if __name__ == "__main__":
             i += 1
             continue
 
-        filename = f"data/{downloaded_pages + 1}!page.txt"
+        filename = f"data/{downloaded_pages + 1}_page.txt"
         with open(filename, 'w', encoding="utf-8") as file:
             file.write(text_)
 
