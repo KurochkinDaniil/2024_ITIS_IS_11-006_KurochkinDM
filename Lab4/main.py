@@ -1,73 +1,67 @@
-import math
-from pathlib import Path
 from collections import defaultdict
-import pandas as pd
-
-current_script_path = Path(__file__).resolve()
-
-
-def load_inverted_index(file_path: str | Path) -> dict:
-    inverted_index_dict = {}
-    with open(file_path, "r", encoding="utf-8") as file:
-        for line in file:
-            term, doc_ids_str = line.strip().split(': ')
-            doc_ids = set(map(int, doc_ids_str.split(', ')))
-            inverted_index_dict[term] = doc_ids
-    return inverted_index_dict
+import math
+import os
+import csv
 
 
-# Шаг 1: Расчет TF
-def calculate_tf(doc_words):
-    tf_dict = defaultdict(float)
-    word_count = len(doc_words)
-    for word in doc_words:
-        tf_dict[word] += 1 / word_count
-    return tf_dict
+inverted_index_path = "Lab3/inverted_index.txt"
+inverted_index = defaultdict(set)
+with open(inverted_index_path, 'r', encoding='utf-8') as file:
+    for line in file:
+        term, docs = line.strip().split(': ')
+        docs_set = set(map(int, docs.split(', ')))
+        inverted_index[term] = docs_set
 
 
-# Шаг 2: Расчет IDF
-def calculate_idf(documents):
-    idf_dict = defaultdict(float)
-    total_docs = len(documents)
-    for doc in documents.values():
-        for word in set(doc):
-            idf_dict[word] += 1
-
-    for word, count in idf_dict.items():
-        idf_dict[word] = math.log(total_docs / count)
-
-    return idf_dict
+processed_docs_path = "Lab2/processed_data"
+documents_list = os.listdir(processed_docs_path)
+total_documents = len(documents_list)
 
 
-# Шаг 3: Расчет TF-IDF
-def calculate_tfidf(tf_dict, idf_dict):
-    tfidf_dict = {}
-    for word, tf_val in tf_dict.items():
-        tfidf_dict[word] = tf_val * idf_dict.get(word, 0)
-    return tfidf_dict
+tf = defaultdict(lambda: defaultdict(float))
 
 
-index_path_ = current_script_path.parent.parent / 'Lab3' / 'inverted_index.txt'
-inverted_index_dict_ = load_inverted_index(index_path_)
+for doc_name in documents_list:
+    doc_path = os.path.join(processed_docs_path, doc_name)
+    with open(doc_path, 'r', encoding='utf-8') as doc_file:
+        words = doc_file.read().split()
+        total_terms = len(words)
+        terms_count = defaultdict(int)
+        for word in words:
+            terms_count[word] += 1
 
-# Выполнение расчетов
-tf_dicts_ = {doc_id: calculate_tf(words) for doc_id, words in inverted_index_dict_.items()}
-idf_dict_ = calculate_idf(inverted_index_dict_)
+        # Расчет TF для каждого слова в документе
+        for term, count in terms_count.items():
+            tf[doc_name][term] = count / total_terms
 
-tfidf_dicts = {doc_id: calculate_tfidf(tf_dict, idf_dict_) for doc_id, tf_dict in tf_dicts_.items()}
+# Расчет IDF для каждого термина
+idf = {term: math.log(total_documents / (1 + len(docs))) for term, docs in inverted_index.items()}
+
+# Расчет TF-IDF
+tf_idf = defaultdict(dict)
+for doc, terms in tf.items():
+    for term, tf_value in terms.items():
+        tf_idf[doc][term] = tf_value * idf.get(term, 0)
 
 
-# Преобразование в DataFrame и сохранение
-tf_df = pd.DataFrame(tf_dicts_).T.fillna(0)
-idf_df = pd.DataFrame(idf_dict_.items(), columns=['Term', 'IDF'])
-tfidf_df = pd.DataFrame(tfidf_dicts).T.fillna(0)
+unique_terms = sorted(inverted_index.keys())
+doc_names = sorted(tf.keys(), key=lambda x: int(x.split('_')[1]))
 
-# Округление до 6 знаков после запятой
-tf_df = tf_df.round(6)
-idf_df = idf_df.round(6)
-tfidf_df = tfidf_df.round(6)
+tf_rows = [[term] + [round(tf[doc].get(term, 0), 6) for doc in doc_names] for term in unique_terms]
+tf_idf_rows = [[term] + [round(tf_idf[doc].get(term, 0), 6) for doc in doc_names] for term in unique_terms]
 
-# Сохранение в CSV
-tf_df.to_csv('tf.csv')
-idf_df.to_csv('idf.csv')
-tfidf_df.to_csv('tfidf.csv')
+with open('idf_table_formatted.csv', 'w', newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    writer.writerow(['Term', 'IDF'])
+    for term, value in idf.items():
+        writer.writerow([term, round(value, 6)])
+
+with open('tf_table_formatted.csv', 'w', newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    writer.writerow(['Term'] + doc_names)
+    writer.writerows(tf_rows)
+
+with open('tf_idf_table_formatted.csv', 'w', newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    writer.writerow(['Term'] + doc_names)
+    writer.writerows(tf_idf_rows)
