@@ -50,18 +50,18 @@ doc_names = sorted(tf.keys(), key=lambda x: int(x.split('_')[1]))
 tf_rows = [[term] + [round(tf[doc].get(term, 0), 6) for doc in doc_names] for term in unique_terms]
 tf_idf_rows = [[term] + [round(tf_idf[doc].get(term, 0), 6) for doc in doc_names] for term in unique_terms]
 
-with open('idf_table_formatted.csv', 'w', newline='', encoding='utf-8') as f:
+with open('idf_table.csv', 'w', newline='', encoding='utf-8') as f:
     writer = csv.writer(f)
     writer.writerow(['Term', 'IDF'])
     for term, value in idf.items():
         writer.writerow([term, round(value, 6)])
 
-with open('tf_table_formatted.csv', 'w', newline='', encoding='utf-8') as f:
+with open('tf_table.csv', 'w', newline='', encoding='utf-8') as f:
     writer = csv.writer(f)
     writer.writerow(['Term'] + doc_names)
     writer.writerows(tf_rows)
 
-with open('tf_idf_table_formatted.csv', 'w', newline='', encoding='utf-8') as f:
+with open('tf_idf_table.csv', 'w', newline='', encoding='utf-8') as f:
     writer = csv.writer(f)
     writer.writerow(['Term'] + doc_names)
     writer.writerows(tf_idf_rows)
