@@ -6,5 +6,8 @@
 1. ```python search.py force > force.txt ```
 2. ```python search.py force jedi > force_jedi.txt ```
 3. ```python search.py force jedi tatooine > force_jedi_tatooine.txt ```
+4. ```python search.py "клон" > force_jedi_tatooine.txt ```
+Пример поиска редкого слова:
+1. ```python search.py "зугурука" > zuguruka.txt ```
 
 
